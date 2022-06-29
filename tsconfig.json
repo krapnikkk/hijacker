@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+      "experimentalDecorators": true,
+      "baseUrl": ".",
+      "module": "esnext",
+      "target": "es5",
+      "lib": ["es6", "dom", "esnext.asynciterable", "es2017"],
+      "sourceMap": true,
+      "moduleResolution": "node",
+      "rootDir": "src",
+      "forceConsistentCasingInFileNames": true,
+      "noImplicitReturns": true,
+      "noImplicitThis": true,
+      "noImplicitAny": true,
+      "strictNullChecks": false,
+      "suppressImplicitAnyIndexErrors": true,
+      "noUnusedLocals": true,
+      "skipLibCheck": true,
+      "allowSyntheticDefaultImports": true,
+      "removeComments": true,
+      "declarationDir": "dist",
+      "declaration": true
+      // "types": [
+      //   "types/esprima",
+      //   "@types/chrome"
+      // ]
+    }
+  }
+  
