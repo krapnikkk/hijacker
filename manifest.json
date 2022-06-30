@@ -10,11 +10,7 @@
   ],
   "background": {
     "scripts": [
-      "libs/esprima.js",
-      "libs/escodegen.js",
-      "libs/estraverse.js",
-      "libs/esrecurse.js",
-      "background.js"
+      "dist/background.bundle.js"
     ]
   },
   "web_accessible_resources": [

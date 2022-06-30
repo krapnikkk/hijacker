@@ -5,10 +5,10 @@
     if (!window) {
         return;
     }
-    if (window.astHook_done) {
+    if (window.esASThookDone) {
         return;
     }
-    window.astHook_done = true;
+    window.esASThookDone = true;
 
     /**
      * 暴露给外面的接口，方法前缀起到命名空间的作用
@@ -18,7 +18,7 @@
      * @param type 声明是什么类型的，对象属性值还是变量赋值，以后或者还会有其它的
      * @returns {string}
      */
-    astHook = window._hook = window.hook = window.astHook = function (name, value, type) {
+    esASThook = window._hook = window.hook = window.esASThook = function (name, value, type) {
         try {
             _hook(name, value, type);
         } catch (e) {
@@ -28,10 +28,10 @@
         return value;
     }
 
-    astHook.hookCallback = [];
+    esASThook.hookCallback = [];
 
     function _hook(name, value, type) {
-        for (let callback of astHook.hookCallback) {
+        for (let callback of esASThook.hookCallback) {
             try {
                 callback(name, value, type);
             } catch (e) {
@@ -50,7 +50,7 @@
         console.log(initDbMessage);
 
         // 用于存储Hook到的所有字符串类型的变量
-        const stringsDB = window.astHook.stringsDB = window.astHook.stringsDB || {
+        const stringsDB = window.esASThook.stringsDB = window.esASThook.stringsDB || {
             varValueDb: [],
             codeLocationExecuteTimesCount: []
         };
@@ -66,14 +66,12 @@
             }
 
             // TODO 更多类型搞进来
-            // TODO 为什么一定要大而全呢？虽然占用的内存并不多，但是如果上百万的零碎变量还是会耗时间的？也许应该针对性的做出取舍
             let valueString = "";
             let valueTypeof = typeof value;
             if (valueTypeof === "string") {
                 valueString = value;
             } else if (valueTypeof === "number") {
-                // 太慢了...
-                // valueString = value + "";
+                valueString = value;
             }
 
             if (!valueString) {
@@ -106,7 +104,7 @@
 
         function getCodeLocation() {
             const callstack = new Error().stack.split("\n");
-            while (callstack.length > 0 && callstack[0].indexOf("cc11001100") === -1) {
+            while (callstack.length > 0 && callstack[0].indexOf("esASThook") === -1) {
                 callstack.shift();
             }
             if (callstack.length < 2) {
@@ -117,16 +115,26 @@
         }
 
         // 添加Hook回调
-        window.astHook.hookCallback.push(stringPutToDB);
+        window.esASThook.hookCallback.push(stringPutToDB);
 
+        
     })();
+
+    (()=>{
+        // function hackValue(name, value, type){
+        //     // 如果命中，则强制进行锁定赋值
+
+        // }
+        // // 添加Hook回调
+        // window.esASThook.hookCallback.push(hackValue);
+    })()
 
     (() => {
 
         // 检索字符串数据库
 
-        const astHook = window.astHook;
-        const stringsDB = astHook.stringsDB;
+        const esASThook = window.esASThook;
+        const stringsDB = esASThook.stringsDB;
 
         // 为什么要采取消息机制呢？
         // 对于浏览器来说，要保证跨域之间的安全，比如使用iframe引入的新的域之中的数据，Chrome似乎是将不同的域隔离在不同的线程中
@@ -135,7 +143,7 @@
         // 执行一条命令时会扩散到所有线程栈中执行，这样使用者就不必在意底层细节了
 
         // 发送消息时的域名，用于识别内部消息
-        const messageDomain = "astHook";
+        const messageDomain = "esASThook";
         const messageTypeSearch = "search";
 
         // 防止消息重复处理
@@ -165,7 +173,7 @@
 
         });
 
-        window.search = window.searchByValue = astHook.search = astHook.searchByValue = function (pattern, isEquals = true, isNeedExpansion = true) {
+        window.search = window.searchByValue = esASThook.search = esASThook.searchByValue = function (pattern, isEquals = true, isNeedExpansion = true) {
             const fieldName = "value";
             // 先搜索当前页面
             _search(fieldName, pattern, isEquals, isNeedExpansion);
@@ -175,7 +183,11 @@
             _searchParentAndChildren(messageId, fieldName, pattern, isEquals, isNeedExpansion);
         }
 
-        window.searchByName = astHook.searchByName = function (pattern, isEquals = false, isNeedExpansion = false) {
+        window.find = function (order) {
+            showResultByExecOrder(order);
+        }
+
+        window.searchByName = esASThook.searchByName = function (pattern, isEquals = false, isNeedExpansion = false) {
             const fieldName = "name";
             // 先搜索当前页面
             _search(fieldName, pattern, isEquals, isNeedExpansion);
@@ -227,6 +239,9 @@
                     }
                 } else if (pattern instanceof RegExp) {
                     isMatch = pattern.test(s[filedName]);
+                } else if (typeof pattern === "number") {
+                    // console.log(s,filedName)
+                    isMatch = pattern === s.value;
                 }
                 if (!isMatch) {
                     continue;
@@ -246,7 +261,6 @@
         }
 
         // 对搜索值进行一个扩大，以便能够搜索到更多结果
-        // 这样也不用苦逼的手动去测试到底是url encode还是url decode了的了
         function expansionS(s) {
             const result = [];
 
@@ -275,7 +289,6 @@
             } catch (e) {
             }
 
-            // 表单数据到底是怎么被编码的...
             try {
                 const t = s.replace(/ /g, "+");
                 if (result.indexOf(t) === -1) {
@@ -287,7 +300,10 @@
             return result;
         }
 
+        let tempResultList = [];
         function showResult(result) {
+            tempResultList.length = 0;
+            tempResultList = result;
             let message = "\n在线程栈： \n" + window.location.href + "\n";
             if (!result.length) {
                 message += "中没有搜索到结果。\n\n";
@@ -298,20 +314,66 @@
 
             message += `中搜到${result.length}条结果： \n\n`;
             console.log(message);
-            console.log(`变量名\t\t\t\t\t变量值\t\t\t\t\t变量类型\t\t\t\t\t所在函数\t\t\t\t\t执行次数\t\t\t\t\t执行顺序\t\t\t\t\t代码位置\n\n\n`);
-            for (let s of result) {
-                if (s.value.length > 90) {
-                    console.log(`${s.name}\t\t\t\t\t${s.value}`);
-                    console.log(blank(s.name.length) + `\t\t\t\t\t${s.type}\t\t\t\t\t${s.codeName}`);
-                    console.log(blank(s.name.length) + `\t\t\t\t\t${s.execTimes}\t\t\t\t\t${s.execOrder}`);
+            console.table(result);
+            // console.log(`变量名\t\t\t\t\t变量值\t\t\t\t\t变量类型\t\t\t\t\t所在函数\t\t\t\t\t执行次数\t\t\t\t\t执行顺序\t\t\t\t\t代码位置\n\n\n`);
+            // for (let s of result) {
+            //     if (s.value.length > 90) {
+            //         console.log(`${s.name}\t\t\t\t\t${s.value}`);
+            //         console.log(blank(s.name.length) + `\t\t\t\t\t${s.type}\t\t\t\t\t${s.codeName}`);
+            //         console.log(blank(s.name.length) + `\t\t\t\t\t${s.execTimes}\t\t\t\t\t${s.execOrder}`);
+            //     } else {
+            //         console.log(`${s.name}\t\t\t\t\t${s.value}\t\t\t\t\t${s.type}\t\t\t\t\t${s.codeName}`);
+            //         console.log(blank(s.name.length) + `\t\t\t\t\t${s.execTimes}\t\t\t\t\t${s.execOrder}`);
+            //     }
+            //     // 打印的时候代码地址尽量放到单独一行，以防文本太长被折叠Chrome就不会自动将其识别为链接了，这时候还得手动复制就麻烦了
+            //     console.log(blank(s.name.length) + "\t\t\t\t\t" + s.codeAddress + "\n\n\n\n");
+            // }
+            // console.log("\n\n\n\n");
+        }
+
+        function showResultByExecOrder(execOrder) {
+            if (tempResultList.length == 0) {
+                console.warn("查询失败！请先确定已经检索到堆栈信息！");
+            } else {
+                let idx = -1;
+                tempResultList.forEach((res, index) => {
+                    if (res.execOrder == execOrder) {
+                        idx = index;
+                    }
+                })
+                if (idx > -1) {
+                    console.group(`堆栈序号:${execOrder}`);
+                    let result = tempResultList[idx];
+                    for (let key in result) {
+                        switch (key) {
+                            case "name":
+                                console.log(`变量名:${result[key]}`);
+                                break;
+                            case "value":
+                                console.log(`变量值:${result[key]}`);
+                                break;
+                            case "type":
+                                console.log(`变量类型:${result[key]}`);
+                                break;
+                            case "execTimes":
+                                console.log(`执行次数:${result[key]}`);
+                                break;
+                            case "execOrder":
+                                console.log(`执行顺序:${result[key]}`);
+                                break;
+                            case "codeName":
+                                console.log(`所在函数:${result[key]}`);
+                                break;
+                            case "codeAddress":
+                                console.log(`代码位置:${result[key]}`);
+                                break;
+                        }
+                    }
+                    console.groupEnd();
                 } else {
-                    console.log(`${s.name}\t\t\t\t\t${s.value}\t\t\t\t\t${s.type}\t\t\t\t\t${s.codeName}`);
-                    console.log(blank(s.name.length) + `\t\t\t\t\t${s.execTimes}\t\t\t\t\t${s.execOrder}`);
+                    console.warn("堆栈信息中查询不到你要查询的结果！请先确定查询序号是否有误！");
                 }
-                // 打印的时候代码地址尽量放到单独一行，以防文本太长被折叠Chrome就不会自动将其识别为链接了，这时候还得手动复制就麻烦了
-                console.log(blank(s.name.length) + "\t\t\t\t\t" + s.codeAddress + "\n\n\n\n");
             }
-            console.log("\n\n\n\n");
         }
 
         function abbreviationPattern(pattern, value) {

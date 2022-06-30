@@ -1,3 +1,8 @@
+import { callExpression, identifier, isFunctionExpression, isIdentifier, isMemberExpression, stringLiteral } from "@babel/types";
+import { escodegen } from "../../types/escodegen";
+import { esprima } from "../../types/esprima";
+import esrecurse from "./estools/esrecurse";
+const hookFunctionName = "esASThook";
 chrome.webRequest.onBeforeRequest.addListener(
     (details) => {
         let redirectUrl = details.url;
@@ -32,22 +37,23 @@ const parseCode = (content) => {
                 if (!variableDeclarator.init) {
                     continue;
                 }
-                if (esutils.isFunctionExpression(variableDeclarator.init)) {
+                if (isFunctionExpression(variableDeclarator.init)) {
                     continue;
                 }
 
                 let varName = "";
-                if (esutils.isIdentifier(variableDeclarator.id) || esutils.isMemberExpression(variableDeclarator.id)) {
+                if (isIdentifier(variableDeclarator.id) || isMemberExpression(variableDeclarator.id)) {
+                    // generator.default(variableDeclarator.id).code;
                     varName = variableDeclarator.id.name;
                 }
 
                 try {
                     const hookFunctionArguments = [
-                        esutils.stringLiteral(varName),
+                        stringLiteral(varName),
                         variableDeclarator.init,
-                        esutils.stringLiteral("var-init")
+                        stringLiteral("var-init")
                     ];
-                    variableDeclarator.init = esutils.callExpression(esutils.identifier(hookFunctionName), hookFunctionArguments)
+                    variableDeclarator.init = callExpression(identifier(hookFunctionName), hookFunctionArguments)
                 } catch (e) {
                     console.error(e);
                 }
