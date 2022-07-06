@@ -4,18 +4,61 @@ const generator = require("@babel/generator");
 
 const hookFunctionName = "esASThook";
 
+function sendMessage(message) {
+    window.chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        window.chrome.tabs.sendMessage(tabs[0].id, message, function (response) { });
+    });
+};
+
+window.chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    var frameId;
+    if (sender.frameId) {
+        frameId = sender.frameId;
+    }
+    else if (request.uniqueId) {
+        frameId = request.uniqueId;
+    }
+    else {
+        frameId = sender.id;
+    }
+    frameId += "";
+
+    if (request.action) {
+    }
+    else if (request.present === 1) {
+        window.chrome.pageAction.show(sender.tab.id);
+    }
+    // In case we are enabled, change the icon to green andd enable the popup.
+    else if (request.present === 2) {
+        window.chrome.pageAction.setIcon({
+            tabId: sender.tab.id, path: {
+                "19": "./icon/19-enable.png",
+                "38": "./icon/38-enable.png"
+            }
+        });
+        window.chrome.pageAction.show(sender.tab.id);
+    }
+
+    // Return the frameid for reference.
+    sendResponse({ frameId: frameId });
+});
+
+window.chrome.pageAction.onClicked.addListener(function (tab) {
+    sendMessage({ action: "pageAction" });
+});
+
 chrome.webRequest.onBeforeRequest.addListener(
     (details) => {
         let redirectUrl = details.url;
         // todo 过滤log&ad&error相关服务插件
-        console.time("parseCode");
-        request(details.url, (data) => {
-            redirectUrl = `data:text/plain;base64,${window.btoa(unescape(encodeURIComponent(parseCode(data))))}`;
-            console.timeEnd("parseCode");
-        },()=>{
-            console.log(`加载异常：${redirectUrl}`);
-            console.timeEnd("parseCode");
-        });
+        // console.time("parseCode");
+        // request(details.url, (data) => {
+        //     redirectUrl = `data:text/plain;base64,${window.btoa(unescape(encodeURIComponent(parseCode(data))))}`;
+        //     console.timeEnd("parseCode");
+        // },()=>{
+        //     console.log(`加载异常：${redirectUrl}`);
+        //     console.timeEnd("parseCode");
+        // });
         return { redirectUrl };
     },
     {

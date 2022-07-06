@@ -120,14 +120,14 @@
         
     })();
 
-    (()=>{
+    // (()=>{
         // function hackValue(name, value, type){
         //     // 如果命中，则强制进行锁定赋值
 
         // }
         // // 添加Hook回调
         // window.esASThook.hookCallback.push(hackValue);
-    })()
+    // })()
 
     (() => {
 
