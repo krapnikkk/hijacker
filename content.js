@@ -19,29 +19,24 @@ const injectCustomJs = (jsPath) => {
 
 }
 
-window.chrome.runtime.onMessage.addListener((message) => {
-    console.log(message);
+window.chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     var action = message.action;
-    // Only answer to actions.
-    if (!action) {
-        return;
-    }
-
-    // We need to reload to inject the scripts.
     if (action === "pageAction") {
         if (!sessionStorage.getItem(spectorLoadedKey)) {
             sessionStorage.setItem(spectorLoadedKey, "true");
             // Delay for all frames.
             setTimeout(function () { window.location.reload(); }, 50);
-            return;
         }
     }
+    sendResponse({ status: "ok" })
 })
+
+injectCustomJs("hook.js").then((res) => {
+    console.log("inject script file success!")
+});
 
 document.addEventListener("DOMContentLoaded", function () {
     if (sessionStorage.getItem(spectorLoadedKey)) {
-        injectCustomJs("hook.js").then((res) => { });
-
         sendMessage({ present: 2 }, function (response) {
             frameId = response.frameId;
         });

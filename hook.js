@@ -120,19 +120,22 @@
         
     })();
 
-    // (()=>{
-        // function hackValue(name, value, type){
-        //     // 如果命中，则强制进行锁定赋值
+    (() => {
+        // 检索字符串数据库
+        const esASThook = window.esASThook;
+        const stringsDB = esASThook.stringsDB;
+        function hackValue(name, value, type){
+            // 如果命中，则强制进行锁定赋值
+            console.log();
 
-        // }
-        // // 添加Hook回调
-        // window.esASThook.hookCallback.push(hackValue);
-    // })()
+        }
+        // 添加Hook回调
+        window.esASThook.hookCallback.push(hackValue);
+    })();
 
     (() => {
 
         // 检索字符串数据库
-
         const esASThook = window.esASThook;
         const stringsDB = esASThook.stringsDB;
 
@@ -240,7 +243,6 @@
                 } else if (pattern instanceof RegExp) {
                     isMatch = pattern.test(s[filedName]);
                 } else if (typeof pattern === "number") {
-                    // console.log(s,filedName)
                     isMatch = pattern === s.value;
                 }
                 if (!isMatch) {

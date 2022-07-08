@@ -4,9 +4,11 @@ const generator = require("@babel/generator");
 
 const hookFunctionName = "esASThook";
 
+var tabList = [];
 function sendMessage(message) {
     window.chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        window.chrome.tabs.sendMessage(tabs[0].id, message, function (response) { });
+        tabList.push(tabs[0].id)
+        window.chrome.tabs.sendMessage(tabs[0].id, message);
     });
 };
 
@@ -46,34 +48,47 @@ window.chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 window.chrome.pageAction.onClicked.addListener(function (tab) {
     sendMessage({ action: "pageAction" });
 });
+// let counter = 0, now = 0;
+
+
 
 chrome.webRequest.onBeforeRequest.addListener(
     (details) => {
         let redirectUrl = details.url;
-        // todo 过滤log&ad&error相关服务插件
-        // console.time("parseCode");
-        // request(details.url, (data) => {
-        //     redirectUrl = `data:text/plain;base64,${window.btoa(unescape(encodeURIComponent(parseCode(data))))}`;
-        //     console.timeEnd("parseCode");
-        // },()=>{
-        //     console.log(`加载异常：${redirectUrl}`);
-        //     console.timeEnd("parseCode");
-        // });
+        let tabId = details.tabId;
+        console.log(tabId, tabList);
+        if (tabList.indexOf(tabId) > -1) {
+            // todo 过滤log&ad&error相关服务插件
+            // console.time("parseCode");
+            // console.log(redirectUrl);
+            // now = Date.now();
+            request(details.url, (data) => {
+                // console.timeEnd("parseCode");
+                // counter += Date.now() - now;
+                // console.log(counter);
+                redirectUrl = `data:text/plain;base64,${window.btoa(unescape(encodeURIComponent(parseCode(data))))}`;
+            }, () => {
+                console.log(`加载异常：${redirectUrl}`);
+                // console.timeEnd("parseCode");
+            });
+        }
+        
         return { redirectUrl };
     },
     {
         // urls: ["<all_urls>"],
-        urls: ["http://*/*","https://*/*"], // todo 其他协议:blob data
+        urls: ["http://*/*", "https://*/*"], // todo 其他协议:blob data
         types: ["script"]
     },
     ["blocking"]
 );
 
+
 const parseCode = (content) => {
-    const syntax = babel.parse(content,{"sourceType": "script"});
+    const syntax = babel.parse(content, { "sourceType": "script" });
     babel.traverse(syntax, {
-         // 变量声明
-         VariableDeclaration(path) {
+        // 变量声明
+        VariableDeclaration(path) {
             const node = path.node;
             if (!node.declarations?.length) {
                 return;
@@ -191,11 +206,11 @@ const parseCode = (content) => {
             }
         }
     });
-    let val =  generator.default(syntax).code;
+    let val = generator.default(syntax).code;
     return val;
 }
 
-function request(url, success,failure) {
+function request(url, success, failure) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, false);
     xhr.onload = function (e) {
@@ -208,11 +223,11 @@ function request(url, success,failure) {
         }
     };
     xhr.onerror = function (e) {
-        failure&&failure();
+        failure && failure();
         console.error(xhr.statusText);
     };
     xhr.ontimeout = function (e) {
-        failure&&failure();
+        failure && failure();
         console.error(xhr.statusText);
     };
     xhr.send(null);
