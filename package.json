@@ -1,7 +1,7 @@
 {
-  "name": "asthook",
+  "name": "hijacker",
   "version": "1.0.0",
-  "description": "js code injecter",
+  "description": "hijack value by ast hook",
   "main": "background.js",
   "directories": {
     "test": "test"
@@ -26,13 +26,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/krapnikkk/ast-hook.git"
+    "url": "git+https://github.com/krapnikkk/hijacker.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/krapnikkk/ast-hook/issues"
+    "url": "https://github.com/krapnikkk/hijacker/issues"
   },
-  "homepage": "https://github.com/krapnikkk/ast-hook#readme"
+  "homepage": "https://github.com/krapnikkk/hijacker#readme"
 }

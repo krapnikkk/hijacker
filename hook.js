@@ -1,5 +1,3 @@
-// ----------------------------------------- Hook代码开始 ----------------------------------------------------- 
-
 (() => {
 
     if (!window) {
@@ -19,25 +17,30 @@
      * @returns {string}
      */
     esASThook = window._hook = window.hook = window.esASThook = function (name, value, type) {
+        let newValue = null;
         try {
-            _hook(name, value, type);
+            newValue = _hook(name, value, type);
         } catch (e) {
             console.error(e);
         }
-        // 不论严寒酷暑、不管刮风下雨，都不应该影响到正常逻辑，我要认识到自己的定位只是一个hook....
-        return value;
+        return newValue || value;
     }
 
     esASThook.hookCallback = [];
 
     function _hook(name, value, type) {
+        let newValue = null;
         for (let callback of esASThook.hookCallback) {
             try {
-                callback(name, value, type);
+                hijackValue = callback(name, value, type);
+                if (hijackValue){
+                    newValue = hijackValue;
+                }
             } catch (e) {
                 console.error(e);
             }
         }
+        return newValue;
     }
 
 
@@ -102,7 +105,7 @@
 
         }
 
-        function getCodeLocation() {
+        window.getCodeLocation = getCodeLocation = function () {
             const callstack = new Error().stack.split("\n");
             while (callstack.length > 0 && callstack[0].indexOf("esASThook") === -1) {
                 callstack.shift();
@@ -117,20 +120,53 @@
         // 添加Hook回调
         window.esASThook.hookCallback.push(stringPutToDB);
 
-        
+
     })();
 
     (() => {
         // 检索字符串数据库
         const esASThook = window.esASThook;
         const stringsDB = esASThook.stringsDB;
-        function hackValue(name, value, type){
-            // 如果命中，则强制进行锁定赋值
-            console.log();
+        window.hijackMap = hijackMap = {};
+        function hijackValue(name, value, type) {
+            if (window.hijackMap && Object.keys(window.hijackMap).length !== 0) {
+                const codeLocation = getCodeLocation();
+                // 如果命中，则强制进行锁定赋值
+                let uuid = `${codeLocation}${name}${type}`;
+                let newValue = hijackMap[uuid];
+                if (newValue) {
+                    return newValue;
+                }
+            }
 
         }
+
+        window.hijack = function (execOrder, newValue) {
+            let varValueDb = esASThook.stringsDB.varValueDb[execOrder - 100000];
+            if (!varValueDb) {
+                console.warn(`查找失败！数据库中找不到调用堆栈序号${execOrder}`);
+                return;
+            }
+            let { codeLocation, name, type } = varValueDb
+            let uuid = `${codeLocation}${name}${type}`;
+            hijackMap[uuid] = newValue;
+        }
+
+        window.cancelHijack = function (execOrder){
+            if (window.hijackMap && Object.keys(window.hijackMap).length !== 0){
+                delete window.hijackMap[execOrder];
+            }
+        }
+
+        window.clearHijack = function(){
+            for (let key in window.hijackMap){
+                delete window.hijackMap[key];
+            }
+            window.hijackMap = {};
+        }
+
         // 添加Hook回调
-        window.esASThook.hookCallback.push(hackValue);
+        window.esASThook.hookCallback.push(hijackValue);
     })();
 
     (() => {
@@ -138,12 +174,6 @@
         // 检索字符串数据库
         const esASThook = window.esASThook;
         const stringsDB = esASThook.stringsDB;
-
-        // 为什么要采取消息机制呢？
-        // 对于浏览器来说，要保证跨域之间的安全，比如使用iframe引入的新的域之中的数据，Chrome似乎是将不同的域隔离在不同的线程中
-        // 当前页面中有多少个线程，可以从Chrome的开发中工具的 Sources --> Threads 查看，如果有多个会有这个选项，同时还可以鼠标单击在不同的线程之间切换
-        // 但是在console中，输入的命令是运行在当前的线程栈中的，所以这就涉及到一个跨域通信的问题，所以就引入postMessage来在当前页面中有多个线程栈的时候，
-        // 执行一条命令时会扩散到所有线程栈中执行，这样使用者就不必在意底层细节了
 
         // 发送消息时的域名，用于识别内部消息
         const messageDomain = "esASThook";
@@ -186,7 +216,7 @@
             _searchParentAndChildren(messageId, fieldName, pattern, isEquals, isNeedExpansion);
         }
 
-        window.find = function (order) {
+        window.view = function (order) {
             showResultByExecOrder(order);
         }
 
@@ -317,20 +347,6 @@
             message += `中搜到${result.length}条结果： \n\n`;
             console.log(message);
             console.table(result);
-            // console.log(`变量名\t\t\t\t\t变量值\t\t\t\t\t变量类型\t\t\t\t\t所在函数\t\t\t\t\t执行次数\t\t\t\t\t执行顺序\t\t\t\t\t代码位置\n\n\n`);
-            // for (let s of result) {
-            //     if (s.value.length > 90) {
-            //         console.log(`${s.name}\t\t\t\t\t${s.value}`);
-            //         console.log(blank(s.name.length) + `\t\t\t\t\t${s.type}\t\t\t\t\t${s.codeName}`);
-            //         console.log(blank(s.name.length) + `\t\t\t\t\t${s.execTimes}\t\t\t\t\t${s.execOrder}`);
-            //     } else {
-            //         console.log(`${s.name}\t\t\t\t\t${s.value}\t\t\t\t\t${s.type}\t\t\t\t\t${s.codeName}`);
-            //         console.log(blank(s.name.length) + `\t\t\t\t\t${s.execTimes}\t\t\t\t\t${s.execOrder}`);
-            //     }
-            //     // 打印的时候代码地址尽量放到单独一行，以防文本太长被折叠Chrome就不会自动将其识别为链接了，这时候还得手动复制就麻烦了
-            //     console.log(blank(s.name.length) + "\t\t\t\t\t" + s.codeAddress + "\n\n\n\n");
-            // }
-            // console.log("\n\n\n\n");
         }
 
         function showResultByExecOrder(execOrder) {
@@ -386,15 +402,7 @@
             return value.replace(pattern, newPattern);
         }
 
-        function blank(n) {
-            let s = "";
-            while (n-- > 0) {
-                s += " ";
-            }
-            return s;
-        }
-
-        function parseCodeLocation(codeLocation) {
+        window.parseCodeLocation = parseCodeLocation = function (codeLocation) {
             const codeInfo = {};
             let matcher = codeLocation.match(/\((.+?)\)/);
             if (matcher != null && matcher.length > 1) {
@@ -413,36 +421,5 @@
 
     })();
 
-    (() => {
-
-        // 是否要在在控制台上打印eval hook日志提醒
-        const enableEvalHookLog = true;
-
-        // 用eval执行的代码也要能够注入，我擦开个接口吧...
-        const evalHolder = window.eval;
-        // todo
-        // window.eval = function (jsCode) {
-
-        //     if (enableEvalHookLog) {
-        //         const isNeedNewLine = jsCode && jsCode.length > 100;
-        //         console.log("AST HOOK工具检测到eval执行代码： " + (isNeedNewLine ? "\n" : "") + jsCode);
-        //     }
-
-        //     let newJsCode = jsCode;
-        //     const xhr = new XMLHttpRequest();
-        //     xhr.addEventListener("load", () => {
-        //         newJsCode = decodeURIComponent(xhr.responseText);
-        //     });
-        //     // 必须同步执行，否则无法返回结果
-        //     xhr.open("POST", "http://127.0.0.1:10010/hook-js-code", false);
-        //     xhr.send(encodeURIComponent(jsCode));
-        //     arguments[0] = newJsCode;
-        //     return evalHolder.apply(this, arguments);
-        // }
-
-        window.eval.toString = function () {
-            return "function eval() { [native code] }";
-        }
-
-    })();
+    // todo eval
 })();
