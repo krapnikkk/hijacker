@@ -20,17 +20,18 @@
 ### 怎么使用
 
 [youtube](https://youtu.be/pVJCagFgT2Q)
+[bilibili](https://www.bilibili.com/video/BV1bN4y1u7Ma/)
 
 
 
 ### 写在最后
 
-本扩展属于toy project，仅仅是为了验证个人的一个想法并为之实现它~
+本扩展属于toy project，仅仅是为了验证个人的一个想法并为之实现它，该项目并不能适配所有H5游戏哦~
 
 ### 感谢
-[ast-hook-for-js-RE](https://github.com/CC11001100/ast-hook-for-js-RE)
-[Babel](https://babeljs.io/)
-[webpack](https://webpack.js.org/)
+- [ast-hook-for-js-RE](https://github.com/CC11001100/ast-hook-for-js-RE)
+- [Babel](https://babeljs.io/)
+- [webpack](https://webpack.js.org/)
 
 ### License ###
 MIT
