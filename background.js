@@ -2,7 +2,7 @@ const babel = require("@babel/core");
 const types = require("@babel/types");
 const generator = require("@babel/generator");
 
-const hookFunctionName = "esASThook";
+const hookFunctionName = "astHook";
 
 var tabList = [];
 function sendMessage(message) {
@@ -56,7 +56,7 @@ chrome.webRequest.onBeforeRequest.addListener(
     (details) => {
         let redirectUrl = details.url;
         let tabId = details.tabId;
-        console.log(tabId, tabList);
+        // console.log(tabId, tabList);
         if (tabList.indexOf(tabId) > -1) {
             // todo 过滤log&ad&error相关服务插件
             // console.time("parseCode");

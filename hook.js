@@ -3,10 +3,10 @@
     if (!window) {
         return;
     }
-    if (window.esASThookDone) {
+    if (window.astHookDone) {
         return;
     }
-    window.esASThookDone = true;
+    window.astHookDone = true;
 
     /**
      * 暴露给外面的接口，方法前缀起到命名空间的作用
@@ -16,7 +16,7 @@
      * @param type 声明是什么类型的，对象属性值还是变量赋值，以后或者还会有其它的
      * @returns {string}
      */
-    esASThook = window._hook = window.hook = window.esASThook = function (name, value, type) {
+    astHook = window._hook = window.hook = window.astHook = function (name, value, type) {
         let newValue = null;
         try {
             newValue = _hook(name, value, type);
@@ -26,11 +26,11 @@
         return newValue || value;
     }
 
-    esASThook.hookCallback = [];
+    astHook.hookCallback = [];
 
     function _hook(name, value, type) {
         let newValue = null;
-        for (let callback of esASThook.hookCallback) {
+        for (let callback of astHook.hookCallback) {
             try {
                 hijackValue = callback(name, value, type);
                 if (hijackValue){
@@ -43,9 +43,6 @@
         return newValue;
     }
 
-
-
-
     (() => {
 
         const initDbMessage = "AST HOOK： 如果本窗口内有多个线程，每个线程栈的数据不会共享，初始化线程栈数据库： \n "
@@ -53,7 +50,7 @@
         console.log(initDbMessage);
 
         // 用于存储Hook到的所有字符串类型的变量
-        const stringsDB = window.esASThook.stringsDB = window.esASThook.stringsDB || {
+        const stringsDB = window.astHook.stringsDB = window.astHook.stringsDB || {
             varValueDb: [],
             codeLocationExecuteTimesCount: []
         };
@@ -107,7 +104,7 @@
 
         window.getCodeLocation = getCodeLocation = function () {
             const callstack = new Error().stack.split("\n");
-            while (callstack.length > 0 && callstack[0].indexOf("esASThook") === -1) {
+            while (callstack.length > 0 && callstack[0].indexOf("astHook") === -1) {
                 callstack.shift();
             }
             if (callstack.length < 2) {
@@ -118,15 +115,15 @@
         }
 
         // 添加Hook回调
-        window.esASThook.hookCallback.push(stringPutToDB);
+        window.astHook.hookCallback.push(stringPutToDB);
 
 
     })();
 
     (() => {
         // 检索字符串数据库
-        const esASThook = window.esASThook;
-        const stringsDB = esASThook.stringsDB;
+        const astHook = window.astHook;
+        const stringsDB = astHook.stringsDB;
         window.hijackMap = hijackMap = {};
         function hijackValue(name, value, type) {
             if (window.hijackMap && Object.keys(window.hijackMap).length !== 0) {
@@ -142,7 +139,7 @@
         }
 
         window.hijack = function (execOrder, newValue) {
-            let varValueDb = esASThook.stringsDB.varValueDb[execOrder - 100000];
+            let varValueDb = astHook.stringsDB.varValueDb[execOrder - 100000];
             if (!varValueDb) {
                 console.warn(`查找失败！数据库中找不到调用堆栈序号${execOrder}`);
                 return;
@@ -166,17 +163,17 @@
         }
 
         // 添加Hook回调
-        window.esASThook.hookCallback.push(hijackValue);
+        window.astHook.hookCallback.push(hijackValue);
     })();
 
     (() => {
 
         // 检索字符串数据库
-        const esASThook = window.esASThook;
-        const stringsDB = esASThook.stringsDB;
+        const astHook = window.astHook;
+        const stringsDB = astHook.stringsDB;
 
         // 发送消息时的域名，用于识别内部消息
-        const messageDomain = "esASThook";
+        const messageDomain = "astHook";
         const messageTypeSearch = "search";
 
         // 防止消息重复处理
@@ -206,7 +203,7 @@
 
         });
 
-        window.search = window.searchByValue = esASThook.search = esASThook.searchByValue = function (pattern, isEquals = true, isNeedExpansion = true) {
+        window.search = window.searchByValue = astHook.search = astHook.searchByValue = function (pattern, isEquals = true, isNeedExpansion = true) {
             const fieldName = "value";
             // 先搜索当前页面
             _search(fieldName, pattern, isEquals, isNeedExpansion);
@@ -220,7 +217,7 @@
             showResultByExecOrder(order);
         }
 
-        window.searchByName = esASThook.searchByName = function (pattern, isEquals = false, isNeedExpansion = false) {
+        window.searchByName = astHook.searchByName = function (pattern, isEquals = false, isNeedExpansion = false) {
             const fieldName = "name";
             // 先搜索当前页面
             _search(fieldName, pattern, isEquals, isNeedExpansion);
@@ -346,6 +343,7 @@
 
             message += `中搜到${result.length}条结果： \n\n`;
             console.log(message);
+            result.push(result[0])
             console.table(result);
         }
 

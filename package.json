@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "hijack value by ast hook",
   "main": "background.js",
-  "directories": {
-    "test": "test"
-  },
   "dependencies": {
     "@babel/core": "^7.18.6",
     "@babel/generator": "^7.18.7",
