@@ -343,8 +343,10 @@
 
             message += `中搜到${result.length}条结果： \n\n`;
             console.log(message);
-            result.push(result[0])
-            console.table(result);
+            result.push({
+                "name":"","value":"","type":"","execTimes":"","execOrder":"","codeName":"","codeAddress":""
+            })
+            console.table(result,["name","value","type","execTimes","execOrder","codeName","codeAddress"]);
         }
 
         function showResultByExecOrder(execOrder) {

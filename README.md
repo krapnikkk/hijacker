@@ -22,7 +22,8 @@
 [youtube](https://youtu.be/pVJCagFgT2Q)
 [bilibili](https://www.bilibili.com/video/BV1bN4y1u7Ma/)
 
-
+### 扩展地址
+[hijacker](https://chrome.google.com/webstore/detail/hijacker/fhajbfolkalcaagcgamlbkalippaignj)
 
 ### 写在最后
 
